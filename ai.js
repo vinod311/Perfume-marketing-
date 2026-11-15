@@ -56,17 +56,32 @@ async function wiki(text){
     var j=await r.json(),p=Object.keys((j.query&&j.query.pages)||{}).map(function(k){return j.query.pages[k]});
     return{txt:p.map(function(x){return '- '+x.title+': '+(x.extract||'')}).join('\n'),src:p.map(function(x){return{url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(x.title.replace(/ /g,'_')),title:'Wikipedia: '+x.title}})}
   }catch(e){return{txt:'',src:[]}}}
+function getModel(){try{return localStorage.getItem('trv_model')||cfg.model||'gemini-2.5-flash'}catch(e){return cfg.model||'gemini-2.5-flash'}}
+async function pickModel(){
+  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',{headers:{'x-goog-api-key':getKey()}});
+  if(!r.ok)throw new Error('model list failed ('+r.status+')');
+  var j=await r.json(),ok=(j.models||[]).filter(function(m){return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1&&/gemini/.test(m.name)&&!/embed|image|tts|live|audio|vision|robotics|computer|thinking|exp|preview/.test(m.name)});
+  var pick=ok.filter(function(m){return /flash/.test(m.name)&&!/lite/.test(m.name)})[0]||ok.filter(function(m){return /flash/.test(m.name)})[0]||ok[0];
+  if(!pick)throw new Error('no Gemini model found for this key');
+  var n=pick.name.replace(/^models\//,'');try{localStorage.setItem('trv_model',n)}catch(e){}
+  return n}
+async function callG(model,body,signal){
+  return fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},body:body})}
 async function direct(msgs,context,web,text){
   var w=web?await wiki(text):{txt:'',src:[]};
   var ac=new AbortController(),to=setTimeout(function(){ac.abort()},60000);
-  var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(cfg.model||'gemini-2.5-flash')+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},
-    body:JSON.stringify({systemInstruction:{parts:[{text:SYS+'\n\n'+context+(w.txt?'\n\nWEB RESULTS (Wikipedia):\n'+w.txt:'')}]},contents:msgs.map(function(m){return{role:m.role==='user'?'user':'model',parts:[{text:m.content}]}}),generationConfig:{maxOutputTokens:800}})});
+  var body=JSON.stringify({systemInstruction:{parts:[{text:SYS+'\n\n'+context+(w.txt?'\n\nWEB RESULTS (Wikipedia):\n'+w.txt:'')}]},contents:msgs.map(function(m){return{role:m.role==='user'?'user':'model',parts:[{text:m.content}]}}),generationConfig:{maxOutputTokens:800}});
+  var r=await callG(getModel(),body,ac.signal),msg='';
+  if(!r.ok){
+    var er=await r.clone().json().catch(function(){return{}});msg=(er.error&&er.error.message)||'';
+    if(r.status===404||/not found|not supported|no longer available|deprecated/i.test(msg)){r=await callG(await pickModel(),body,ac.signal);if(!r.ok){er=await r.clone().json().catch(function(){return{}});msg=(er.error&&er.error.message)||''}}}
   clearTimeout(to);
   if(r.status===429)throw new Error('limit');
-  if(r.status===400||r.status===403)throw new Error('key');
-  if(!r.ok)throw new Error('server');
+  if(!r.ok){
+    if(/api key|permission|denied|unauthorized|billing/i.test(msg)&&(r.status===400||r.status===401||r.status===403))throw new Error('key');
+    throw new Error('Google said '+r.status+(msg?': '+msg.slice(0,160):''))}
   var j=await r.json(),t=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(function(p){return p.text||''}).join('').trim();
-  if(!t)throw new Error('server');
+  if(!t)throw new Error('Google sent an empty answer (maybe blocked). Try rephrasing.');
   return{answer:t,sources:w.src}}
 async function ask(text){
   text=String(text||'').trim();if(!text||busy)return;
@@ -85,11 +100,11 @@ async function ask(text){
       clearTimeout(to);
       j=await r.json().catch(function(){return{}});
       if(r.status===429||j.error==='limit')throw new Error('limit');
-      if(!r.ok||!j.answer)throw new Error('server')
+      if(!r.ok||!j.answer)throw new Error('server error '+r.status)
     }else j=await direct(msgs,context,web,text);
     hist.push({role:'assistant',content:j.answer,sources:j.sources||[]})
   }catch(e){
-    var la=localAnswer(text),why=e.message==='limit'?'Free AI limit reached for now (try later or tomorrow). Showing catalogue answer instead.':e.message==='key'?'The Google key was not accepted. Remove it and paste it again. Showing catalogue answer instead.':!navigator.onLine||e.message==='offline'?'You are offline. Showing catalogue answer instead.':'AI is not reachable right now. Showing catalogue answer instead.';
+    var la=localAnswer(text),why=e.message==='limit'?'Free AI limit reached for now (try later or tomorrow). Showing catalogue answer instead.':e.message==='key'?'The Google key was not accepted. Remove it and paste it again. Showing catalogue answer instead.':!navigator.onLine||e.message==='offline'?'You are offline. Showing catalogue answer instead.':'AI problem: '+(e.message==='Failed to fetch'?'could not reach Google (check internet)':e.message)+'. Showing catalogue answer instead.';
     hist.push({role:'assistant',content:why,html:'<p><i>'+esc(why)+'</i></p>'+la.html,local:true})}
   busy=false;render()}
 function setup(){
