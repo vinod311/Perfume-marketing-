@@ -76,10 +76,18 @@ async function direct(msgs,context,web,text){
   var w=web?await wiki(text):{txt:'',src:[]};
   var ac=new AbortController(),to=setTimeout(function(){ac.abort()},60000);
   var body=JSON.stringify({systemInstruction:{parts:[{text:SYS+'\n\n'+context+(w.txt?'\n\nWEB RESULTS (Wikipedia):\n'+w.txt:'')}]},contents:msgs.map(function(m){return{role:m.role==='user'?'user':'model',parts:[{text:m.content}]}}),generationConfig:{maxOutputTokens:800}});
-  var tried=[getModel()],r=await callG(tried[0],body,ac.signal),msg='';
-  if(r.ok)setModel(tried[0]);
+  var today=new Date().toDateString(),useLite=false,lm='';
+  try{lm=localStorage.getItem('trv_lite')||'';useLite=!!lm&&localStorage.getItem('trv_litedate')===today}catch(e){}
+  var tried=[useLite?lm:getModel()],r=await callG(tried[0],body,ac.signal),msg='';
+  if(r.ok){if(!useLite)setModel(tried[0])}
   else{
     msg=await errOf(r);
+    if(r.status===429&&!useLite){
+      try{var lt=(await listModels()).filter(function(x){return /lite/.test(x)});
+        for(var z=0;z<lt.length&&z<2;z++){
+          if(tried.indexOf(lt[z])>-1)continue;
+          tried.push(lt[z]);var r2=await callG(lt[z],body,ac.signal);
+          if(r2.ok){r=r2;try{localStorage.setItem('trv_lite',lt[z]);localStorage.setItem('trv_litedate',today)}catch(e){}break}}}catch(e){}}
     if(r.status>=500||r.status===0){
       for(var n=0;n<2&&(r.status>=500||r.status===0);n++){
         await new Promise(function(s){setTimeout(s,2000*(n+1))});
@@ -132,7 +140,7 @@ async function ask(text){
     }else j=await direct(msgs,context,web,text);
     hist.push({role:'assistant',content:j.answer,sources:j.sources||[]})
   }catch(e){
-    var la=localAnswer(text),why=e.message==='limit'?'Free AI limit reached for now (try later or tomorrow). Showing catalogue answer instead.':e.message==='key'?'The Google key was not accepted. Remove it and paste it again. Showing catalogue answer instead.':!navigator.onLine||e.message==='offline'?'You are offline. Showing catalogue answer instead.':'AI problem: '+(e.message==='Failed to fetch'?'could not reach Google (check internet)':e.message)+'. Showing catalogue answer instead.';
+    var la=localAnswer(text),why=e.message==='limit'?'Free AI limit reached for today. It resets tomorrow. Showing catalogue answer instead.':e.message==='key'?'The Google key was not accepted. Remove it and paste it again. Showing catalogue answer instead.':!navigator.onLine||e.message==='offline'?'You are offline. Showing catalogue answer instead.':'AI problem: '+(e.message==='Failed to fetch'?'could not reach Google (check internet)':e.message)+'. Showing catalogue answer instead.';
     hist.push({role:'assistant',content:why,html:'<p><i>'+esc(why)+'</i></p>'+la.html,local:true})}
   busy=false;render()}
 function setup(){
