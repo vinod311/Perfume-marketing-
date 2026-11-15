@@ -23,10 +23,20 @@ function fmt(t){
     if(/^\s*[-*]\s+/.test(l)){if(!inl){out+='<ul>';inl=true}out+='<li>'+l.replace(/^\s*[-*]\s+/,'')+'</li>'}
     else{if(inl){out+='</ul>';inl=false}if(l.trim())out+='<p>'+l+'</p>'}});
   return out+(inl?'</ul>':'')}
+var APPW={F:'floor mop',D:'detergent wash washing powder',W:'dish dishwash vessel utensil',T:'toilet bathroom',P:'phenyl disinfectant',S:'softener fabric conditioner',A:'air freshener spray room'};
 function localAnswer(text){
-  var r=rank(text).slice(0,3);
-  if(!r.length)return{html:'<p>No match in the catalogue. Try a smell (rose, lemon, camphor) or a product (dishwash, softener).</p>'};
-  return{html:'<p>From your catalogue:</p><ul>'+r.map(function(f){return '<li><a href="#/f/'+f.id+'"><b>'+esc(f.name)+'</b></a> - '+esc(f.smell)+'</li>'}).join('')+'</ul>'}}
+  var db=T().db(),tk=toks(text),codes=[];
+  Object.keys(APPW).forEach(function(c){if(APPW[c].split(' ').some(function(w){return tk.indexOf(w)>-1}))codes.push(c)});
+  var r=rank(text);
+  if(codes.length)r=r.filter(function(f){return codes.every(function(c){return f.apps.indexOf(c)>-1})});
+  r=r.slice(0,3);
+  var g=db.w.filter(function(x){var k=x.word.toLowerCase();return tk.some(function(t){return k.indexOf(t)>-1})}).slice(0,3);
+  var h='';
+  if(r.length)h+='<p>Best matches from your catalogue:</p><ul>'+r.map(function(f){return '<li><a href="#/f/'+f.id+'"><b>'+esc(f.name)+'</b></a> ('+esc(f.family)+') - '+esc(f.smell)+(f.sell?'<br><i>Tell customer: '+esc(f.sell)+'</i>':'')+'</li>'}).join('')+'</ul>';
+  if(g.length)h+='<p>Meaning of words:</p><ul>'+g.map(function(x){return '<li><b>'+esc(x.word)+'</b>: '+esc(x.meaning)+'</li>'}).join('')+'</ul>';
+  if(!h)h='<p>No match. Try a smell (rose, lemon, camphor) or a product (dishwash, softener), for example: "rose for floor cleaner".</p>';
+  else h+='<p class="mut">Always ask the customer to test a sample in their own base. Confirm dosage and stability with Givaudan.</p>';
+  return{html:h}}
 function bubble(m){
   if(m.role==='user')return '<div class="msg u">'+esc(m.content)+'</div>';
   var src=(m.sources||[]).map(function(s){return '<a href="'+esc(s.url)+'" target="_blank" rel="noopener noreferrer">'+esc(s.title||s.url)+'</a>'}).join('');
@@ -38,9 +48,9 @@ function render(){
 async function ask(text){
   text=String(text||'').trim();if(!text||busy)return;
   hist.push({role:'user',content:text});busy=true;render();
-  var web=document.getElementById('web');web=web?web.checked:true;
+  var web=document.getElementById('web');web=!!(cfg.web&&web&&web.checked);
   try{
-    if(!cfg.endpoint)throw new Error('noendpoint');
+    if(!cfg.endpoint){hist.push({role:'assistant',content:'',html:localAnswer(text).html,local:true});busy=false;render();return}
     if(!navigator.onLine)throw new Error('offline');
     var msgs=hist.filter(function(m){return !m.err&&!m.local}).slice(-8).map(function(m){return{role:m.role,content:m.content.slice(0,1500)}});
     while(msgs.length&&msgs[0].role!=='user')msgs.shift();
@@ -48,20 +58,21 @@ async function ask(text){
     var r=await fetch(cfg.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},signal:ac.signal,body:JSON.stringify({messages:msgs,context:ctx(text+' '+hist.slice(-3).map(function(m){return m.content}).join(' ')),web:web})});
     clearTimeout(to);
     var j=await r.json().catch(function(){return{}});
+    if(r.status===429||j.error==='limit')throw new Error('limit');
     if(!r.ok||!j.answer)throw new Error(j.error||'server');
     hist.push({role:'assistant',content:j.answer,sources:j.sources||[]})
   }catch(e){
-    var la=localAnswer(text),why=e.message==='noendpoint'?'AI is not set up yet (see README, step B). Showing catalogue search instead.':!navigator.onLine||e.message==='offline'?'You are offline. Showing catalogue search instead.':'AI is not reachable right now. Showing catalogue search instead.';
+    var la=localAnswer(text),why=e.message==='noendpoint'?'AI is not set up yet (see README, step B). Showing catalogue search instead.':e.message==='limit'?'Free AI limit reached for now (try again later or tomorrow). Showing catalogue search instead.':!navigator.onLine||e.message==='offline'?'You are offline. Showing catalogue search instead.':'AI is not reachable right now. Showing catalogue search instead.';
     hist.push({role:'assistant',content:why,html:'<p><i>'+esc(why)+'</i></p>'+la.html,local:true})}
   busy=false;render()}
 function view(root){
   var sugg=['Which fragrance is best for dishwash?','Customer wants a strong kapoor (camphor) smell','What is the difference between top, middle and base notes?','What dosage is normal for fragrance in floor cleaner?'];
-  root.innerHTML='<div class="card"><h2>Ask AI</h2><div class="mut">Answers customer doubts using your catalogue'+(cfg.endpoint?' and the internet':'')+'. Do not type customer phone numbers or personal details. <a href="privacy.html">Privacy</a></div>'+
-   '<label class="chk"><input type="checkbox" id="web" checked> Search the internet if needed</label></div>'+
+  root.innerHTML='<div class="card"><h2>Ask</h2><div class="mut">Type a customer doubt. '+(cfg.endpoint?'AI answers using your catalogue'+(cfg.web?' and the internet':'')+'.':'Works offline, free, no setup. Nothing leaves your phone.')+' Do not type customer phone numbers or personal details. <a href="privacy.html">Privacy</a></div>'+
+   (cfg.endpoint&&cfg.web?'<label class="chk"><input type="checkbox" id="web"> Search the internet (uses free monthly quota)</label>':'')+'</div>'+
    '<div id="chat"></div>'+
    (hist.length?'':'<div class="chips" style="flex-wrap:wrap">'+sugg.map(function(s){return '<button class="chip" data-q="'+esc(s)+'">'+esc(s)+'</button>'}).join('')+'</div>')+
    '<div class="composer"><div class="row"><input type="text" id="aq" placeholder="Type the customer\'s doubt..." autocomplete="off"><button class="btn y" id="as">Ask</button></div>'+
-   (hist.length?'<div class="mut" style="margin-top:6px"><a href="#" id="ac2">Clear chat</a> &middot; AI can make mistakes. Confirm technical details with Givaudan.</div>':'')+'</div>';
+   (hist.length?'<div class="mut" style="margin-top:6px"><a href="#" id="ac2">Clear chat</a> &middot; Confirm technical details with Givaudan.</div>':'')+'</div>';
   var go=function(){var i=document.getElementById('aq'),v=i.value;i.value='';ask(v).then(function(){if(!document.getElementById('ac2'))view(root)})};
   document.getElementById('as').onclick=go;
   document.getElementById('aq').onkeydown=function(e){if(e.key==='Enter')go()};
@@ -72,5 +83,5 @@ function view(root){
 document.addEventListener('click',function(e){
   var a=e.target.closest('[data-ask]');if(!a)return;
   e.preventDefault();pre=a.getAttribute('data-ask');location.hash='#/ai'});
-window.TRV_AI={view:view,ask:ask};
+window.TRV_AI={view:view,ask:ask,local:localAnswer};
 })();

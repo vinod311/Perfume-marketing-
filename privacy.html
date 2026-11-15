@@ -8,14 +8,14 @@
 <p class="mut">Trivenkem Fragrance Finder, by Trivenkem Agencies. Last updated: 15 November 2026.</p>
 
 <h4>Summary</h4>
-<p>No login, no ads, no tracking, no analytics. Your catalogue changes stay on your own phone. The only thing that leaves your phone is a question you type into <b>Ask AI</b>.</p>
+<p>No login, no ads, no tracking, no analytics. Your catalogue changes stay on your own phone. By default nothing leaves your phone. Only if the owner switches on the optional AI feature, a question typed into <b>Ask</b> is sent for an AI answer (details below).</p>
 
 <h4>Stored on your device</h4>
 <p>Fragrances you add or edit, stars, your private notes (price, stock, feedback) and the customer-words list are saved in your browser's local storage on your phone. We do not receive them. Clearing browser data or using Reset removes them, so keep a backup (Import / Export).</p>
 
-<h4>Ask AI and internet search</h4>
-<p>When you send a question, the app sends to our server (a Cloudflare Worker) your question, recent messages of that chat, and a short extract of the fragrance catalogue (names, smell, notes, suitable products) to help answer. Your private notes, prices and stock are never sent. The server passes this to Anthropic, which generates the answer and, when switched on, runs internet searches for it. Chat history is kept only on the screen and is gone when you close or reload the app.</p>
-<p>We do not keep a database of questions. However, Cloudflare and Anthropic may process technical data (such as IP address and request logs) under their own policies: <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">Cloudflare</a>, <a href="https://www.anthropic.com/legal/privacy" rel="noopener">Anthropic</a>.</p>
+<h4>Optional AI answers (off unless the owner sets them up)</h4>
+<p>When you send a question, the app sends to our server (a Cloudflare Worker) your question, recent messages of that chat, and a short extract of the fragrance catalogue (names, smell, notes, suitable products) to help answer. Your private notes, prices and stock are never sent. If you tick "Search the internet", your last question is also sent to Tavily (a web search service) to find web pages. The server passes the question, catalogue extract and any search results to Google (Gemini), which generates the answer. Because this uses Google's free service, Google may use these questions and answers to improve its products and may have people review them. Chat history is kept only on the screen and is gone when you close or reload the app.</p>
+<p>We do not keep a database of questions. However, Cloudflare, Tavily and Google may process technical data (such as IP address and request logs) under their own policies: <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">Cloudflare</a>, <a href="https://policies.google.com/privacy" rel="noopener">Google</a>, <a href="https://www.tavily.com/privacy" rel="noopener">Tavily</a>.</p>
 <p><b>Please do not type</b> customer names, phone numbers, addresses or other personal or confidential information into Ask AI. AI answers can be wrong; confirm technical details such as dosage and stability with Givaudan.</p>
 
 <h4>Hosting</h4>

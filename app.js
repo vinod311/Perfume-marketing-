@@ -113,7 +113,7 @@ function renderRes(){
   var r=results(),hasQ=!!norm(q.value),el=$('#res');if(!el)return;
   $('#clr').hidden=!q.value;
   el.innerHTML='<div class="mut">'+r.length+' of '+db.f.length+' fragrances'+(hasQ?' for "'+esc(q.value)+'"':'')+(st.apps.length||st.fam||st.star?' <a href="#/" id="rst">Clear filters</a>':'')+'</div>'+
-   (r.length?r.map(function(f,i){return card(f,i,hasQ)}).join(''):'<div class="card">No match. Try fewer words, a smell (rose, lemon, camphor) or a product (dishwash, softener). <a href="#/new">Add this fragrance</a> or <a href="#/ai" data-ask="'+esc('Customer is asking for: '+q.value+'. Which of our fragrances fit?')+'">Ask AI</a></div>')}
+   (r.length?r.map(function(f,i){return card(f,i,hasQ)}).join(''):'<div class="card">No match. Try fewer words, a smell (rose, lemon, camphor) or a product (dishwash, softener). <a href="#/new">Add this fragrance</a> or <a href="#/ai" data-ask="'+esc('Customer is asking for: '+q.value+'. Which of our fragrances fit?')+'">Ask</a></div>')}
 function detail(id){
   var f=byId(id);if(!f){app.innerHTML='<div class="card">Not found. <a href="#/">Back</a></div>';return}
   var ok=f.apps.map(function(c){return '<span class="ap ok">\u2713 '+esc(APPS[c])+'</span>'}).join('');
@@ -129,7 +129,7 @@ function detail(id){
    '<h4>My notes</h4><div style="white-space:pre-wrap">'+(f.notes?esc(f.notes):'<span class="mut">Nothing yet. Tap Edit to add price, stock or customer feedback.</span>')+'</div>'+
    (sim?'<h4>Similar ('+esc(f.family)+')</h4><div>'+sim+'</div>':'')+
    '<p class="mut" style="margin-top:14px">Always ask the customer to test the sample in their own base. Confirm dosage and stability with Givaudan.</p>'+
-   '<div class="row" style="margin-top:10px"><a class="btn y" href="#/edit/'+f.id+'">Edit</a><button class="btn" id="shr">Share summary</button><button class="btn" data-ask="'+esc('Tell me about '+f.name+': best uses, how to pitch it, and what to tell a customer who has doubts about it.')+'">Ask AI</button><button class="btn r" id="del">Delete</button></div></div>';
+   '<div class="row" style="margin-top:10px"><a class="btn y" href="#/edit/'+f.id+'">Edit</a><button class="btn" id="shr">Share summary</button><button class="btn" data-ask="'+esc('Tell me about '+f.name+': best uses, how to pitch it, and what to tell a customer who has doubts about it.')+'">Ask</button><button class="btn r" id="del">Delete</button></div></div>';
   $('#shr').onclick=function(){var t=f.name+' ('+f.family+')\n'+f.smell+'\nTop: '+f.top+' | Heart: '+f.heart+' | Base: '+f.base+'\nSuitable for: '+f.apps.map(function(c){return APPS[c]}).join(', ')+(f.sell?'\n'+f.sell:'')+'\n- Trivenkem Agencies, 97910 63733';
     if(navigator.share)navigator.share({text:t}).catch(function(){});else if(navigator.clipboard){navigator.clipboard.writeText(t);toast('Copied')}};
   $('#del').onclick=function(){if(confirm('Delete '+f.name+'?')){db.f=db.f.filter(function(x){return x.id!==f.id});save();location.hash='#/'}}}
