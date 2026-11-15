@@ -56,25 +56,38 @@ async function wiki(text){
     var j=await r.json(),p=Object.keys((j.query&&j.query.pages)||{}).map(function(k){return j.query.pages[k]});
     return{txt:p.map(function(x){return '- '+x.title+': '+(x.extract||'')}).join('\n'),src:p.map(function(x){return{url:'https://en.wikipedia.org/wiki/'+encodeURIComponent(x.title.replace(/ /g,'_')),title:'Wikipedia: '+x.title}})}
   }catch(e){return{txt:'',src:[]}}}
-function getModel(){try{return localStorage.getItem('trv_model')||cfg.model||'gemini-2.5-flash'}catch(e){return cfg.model||'gemini-2.5-flash'}}
-async function pickModel(){
+var DEF='gemini-3.8-flash';
+function getModel(){try{return localStorage.getItem('trv_model2')||cfg.model||DEF}catch(e){return cfg.model||DEF}}
+function setModel(n){try{localStorage.setItem('trv_model2',n)}catch(e){}}
+async function listModels(){
   var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',{headers:{'x-goog-api-key':getKey()}});
   if(!r.ok)throw new Error('model list failed ('+r.status+')');
-  var j=await r.json(),ok=(j.models||[]).filter(function(m){return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1&&/gemini/.test(m.name)&&!/embed|image|tts|live|audio|vision|robotics|computer|thinking|exp|preview/.test(m.name)});
-  var pick=ok.filter(function(m){return /flash/.test(m.name)&&!/lite/.test(m.name)})[0]||ok.filter(function(m){return /flash/.test(m.name)})[0]||ok[0];
-  if(!pick)throw new Error('no Gemini model found for this key');
-  var n=pick.name.replace(/^models\//,'');try{localStorage.setItem('trv_model',n)}catch(e){}
-  return n}
+  var j=await r.json();
+  function ver(n){var m=/gemini-(\d+(?:\.\d+)?)/.exec(n);return m?parseFloat(m[1]):0}
+  function sc(n){return (/flash/.test(n)?1000:0)+(/lite/.test(n)?-300:0)+(/preview|exp/.test(n)?-100:0)+ver(n)}
+  return (j.models||[]).filter(function(m){return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1&&/gemini/.test(m.name)&&!/embed|image|tts|live|audio|vision|robotics|computer|thinking/.test(m.name)})
+    .map(function(m){return m.name.replace(/^models\//,'')}).sort(function(x,y){return sc(y)-sc(x)})}
 async function callG(model,body,signal){
   return fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},body:body})}
+async function errOf(r){var e=await r.clone().json().catch(function(){return{}});return (e.error&&e.error.message)||''}
+function modelGone(r,msg){return r.status===404||/not found|not supported|no longer available|deprecated/i.test(msg)}
 async function direct(msgs,context,web,text){
   var w=web?await wiki(text):{txt:'',src:[]};
   var ac=new AbortController(),to=setTimeout(function(){ac.abort()},60000);
   var body=JSON.stringify({systemInstruction:{parts:[{text:SYS+'\n\n'+context+(w.txt?'\n\nWEB RESULTS (Wikipedia):\n'+w.txt:'')}]},contents:msgs.map(function(m){return{role:m.role==='user'?'user':'model',parts:[{text:m.content}]}}),generationConfig:{maxOutputTokens:800}});
-  var r=await callG(getModel(),body,ac.signal),msg='';
-  if(!r.ok){
-    var er=await r.clone().json().catch(function(){return{}});msg=(er.error&&er.error.message)||'';
-    if(r.status===404||/not found|not supported|no longer available|deprecated/i.test(msg)){r=await callG(await pickModel(),body,ac.signal);if(!r.ok){er=await r.clone().json().catch(function(){return{}});msg=(er.error&&er.error.message)||''}}}
+  var tried=[getModel()],r=await callG(tried[0],body,ac.signal),msg='';
+  if(r.ok)setModel(tried[0]);
+  else{
+    msg=await errOf(r);
+    if(modelGone(r,msg)){
+      var cand=[],sug=/use\s+models\/(gemini-[A-Za-z0-9.\-]+)/i.exec(msg);
+      if(sug)cand.push(sug[1]);
+      try{cand=cand.concat(await listModels())}catch(e){}
+      for(var k=0;k<cand.length&&k<6;k++){
+        if(tried.indexOf(cand[k])>-1)continue;
+        tried.push(cand[k]);r=await callG(cand[k],body,ac.signal);
+        if(r.ok){setModel(cand[k]);break}
+        msg=await errOf(r);if(!modelGone(r,msg))break}}}
   clearTimeout(to);
   if(r.status===429)throw new Error('limit');
   if(!r.ok){
