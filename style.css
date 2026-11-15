@@ -49,3 +49,17 @@ footer{text-align:center;padding:10px;font-size:13px;color:var(--mut)}
 .composer .row{flex-wrap:nowrap}.composer input[type=text]{flex:1;border-radius:20px;padding:11px 14px}
 .dots span{animation:b 1s infinite;display:inline-block}.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
 @keyframes b{0%,60%,100%{opacity:.2}30%{opacity:1}}
+
+/* Ask tab (new layout) */
+.info{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 10px}
+.info-top{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:14px}
+.dot{width:9px;height:9px;border-radius:50%;background:#999;display:inline-block}.dot.ok{background:var(--ok)}
+.pv{margin-left:auto;font-size:13px}
+.info .chk{margin:8px 0 0}
+.welcome{background:var(--navy);color:#fff;border-radius:8px;padding:14px;margin:0 0 10px}
+.welcome .kicker{color:var(--o);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.welcome h2{color:#fff;font-size:20px;margin:6px 0 6px}.welcome p{color:#ddd;margin:0;font-size:15px}
+.tip{background:#fff8e1;border-left:4px solid var(--o);border-radius:6px;padding:10px 12px;margin:0 0 12px;font-size:14px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:14px;margin:4px 0 2px}
+.chips.qs{flex-wrap:wrap;overflow:visible}
+.foot{margin-top:6px;font-size:13px}

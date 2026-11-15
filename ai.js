@@ -67,15 +67,16 @@ async function listModels(){
   function sc(n){return (/flash/.test(n)?1000:0)+(/lite/.test(n)?-300:0)+(/preview|exp/.test(n)?-100:0)+ver(n)}
   return (j.models||[]).filter(function(m){return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1&&/gemini/.test(m.name)&&!/embed|image|tts|live|audio|vision|robotics|computer|thinking/.test(m.name)})
     .map(function(m){return m.name.replace(/^models\//,'')}).sort(function(x,y){return sc(y)-sc(x)})}
-async function callG(model,body,signal){
-  try{return await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},body:body})}
-  catch(e){if(e&&e.name==='AbortError')throw e;var f={ok:false,status:0,json:async function(){return{}},clone:function(){return f}};return f}}
+async function callG(model,body){
+  var ac=new AbortController(),t=setTimeout(function(){ac.abort()},cfg.timeout||20000);
+  try{var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:ac.signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},body:body});clearTimeout(t);return r}
+  catch(e){clearTimeout(t);var f={ok:false,status:0,timeout:!!(e&&e.name==='AbortError'),json:async function(){return{}},clone:function(){return f}};return f}}
 async function errOf(r){var e=await r.clone().json().catch(function(){return{}});return (e.error&&e.error.message)||''}
 function modelGone(r,msg){return r.status===404||/not found|not supported|no longer available|deprecated/i.test(msg)}
 async function direct(msgs,context,web,text){
   var w=web?await wiki(text):{txt:'',src:[]};
-  var ac=new AbortController(),to=setTimeout(function(){ac.abort()},60000);
-  var body=JSON.stringify({systemInstruction:{parts:[{text:SYS+'\n\n'+context+(w.txt?'\n\nWEB RESULTS (Wikipedia):\n'+w.txt:'')}]},contents:msgs.map(function(m){return{role:m.role==='user'?'user':'model',parts:[{text:m.content}]}}),generationConfig:{maxOutputTokens:800}});
+  var ac={signal:undefined},to=0;
+  var body=JSON.stringify({systemInstruction:{parts:[{text:SYS+'\n\n'+context+(w.txt?'\n\nWEB RESULTS (Wikipedia):\n'+w.txt:'')}]},contents:msgs.map(function(m){return{role:m.role==='user'?'user':'model',parts:[{text:m.content}]}}),generationConfig:{maxOutputTokens:2000}});
   var today=new Date().toDateString(),useLite=false,lm='';
   try{lm=localStorage.getItem('trv_lite')||'';useLite=!!lm&&localStorage.getItem('trv_litedate')===today}catch(e){}
   var tried=[useLite?lm:getModel()],r=await callG(tried[0],body,ac.signal),msg='';
@@ -89,13 +90,13 @@ async function direct(msgs,context,web,text){
           tried.push(lt[z]);var r2=await callG(lt[z],body,ac.signal);
           if(r2.ok){r=r2;try{localStorage.setItem('trv_lite',lt[z]);localStorage.setItem('trv_litedate',today)}catch(e){}break}}}catch(e){}}
     if(r.status>=500||r.status===0){
-      for(var n=0;n<2&&(r.status>=500||r.status===0);n++){
+      for(var n=0;n<2&&(r.status>=500||r.status===0)&&!r.timeout;n++){
         await new Promise(function(s){setTimeout(s,2000*(n+1))});
         r=await callG(tried[0],body,ac.signal);
         if(r.ok){setModel(tried[0]);break}
         msg=await errOf(r)}
       if(!r.ok&&(r.status>=500||r.status===0)){
-        try{var alt=await listModels();
+        try{var alt=await listModels();alt.sort(function(x,y){return (/lite/.test(y)?1:0)-(/lite/.test(x)?1:0)});
           for(var q=0,t2=0;q<alt.length&&t2<2;q++){
             if(tried.indexOf(alt[q])>-1)continue;
             tried.push(alt[q]);t2++;r=await callG(alt[q],body,ac.signal);
@@ -113,6 +114,7 @@ async function direct(msgs,context,web,text){
   if(r.status===429)throw new Error('limit');
   if(!r.ok){
     if(/api key|permission|denied|unauthorized|billing/i.test(msg)&&(r.status===400||r.status===401||r.status===403))throw new Error('key');
+    if(r.status===0&&r.timeout)throw new Error('Google took too long to answer. Please try again');
     if(r.status===0)throw new Error('Could not reach Google. Check your internet, and turn off VPN, Private DNS or data saver, then try again');
     if(r.status>=500)throw new Error('Google is busy right now ('+r.status+'). Please try again in a minute');
     throw new Error('Google said '+r.status+(msg?': '+msg.slice(0,160):''))}
@@ -148,13 +150,16 @@ function setup(){
   if(getKey())return '<div class="card"><b>AI is ON</b> (free Google key saved on this phone only). <a href="#" id="rk">Remove key</a></div>';
   return '<details class="card"><summary><b>Turn on free AI (optional)</b></summary><ol><li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a>, sign in, tap <b>Create API key</b>, copy it.</li><li>Paste it below and tap Save.</li></ol><input type="text" id="gk" placeholder="Paste Google key" autocomplete="off"><div style="margin-top:8px"><button class="btn y" id="sk">Save</button></div><div class="mut" style="margin-top:6px">The key stays on this phone only. Questions then go to Google. See <a href="privacy.html">Privacy</a>.</div></details>'}
 function view(root){
-  var sugg=['Which fragrance is best for dishwash?','Customer wants a strong kapoor (camphor) smell','What is the difference between top, middle and base notes?','Rose smell for floor cleaner'];
-  root.innerHTML='<div class="card"><h2>Ask</h2><div class="mut">Type a customer doubt. '+(aiOn()?'AI answers using your catalogue.':'Works offline, free, no setup. Nothing leaves your phone.')+' <a href="privacy.html">Privacy</a></div>'+
-   (aiOn()?'<label class="chk"><input type="checkbox" id="web"> Also search Wikipedia (free)</label>':'')+'</div>'+setup()+
-   '<div id="chat"></div>'+
-   (hist.length?'':'<div class="chips" style="flex-wrap:wrap">'+sugg.map(function(s){return '<button class="chip" data-q="'+esc(s)+'">'+esc(s)+'</button>'}).join('')+'</div>')+
+  var sugg=['Which fragrance is best for dishwash?','Rose smell for floor cleaner','Strong camphor (kapoor) smell','Difference between top, middle and base notes?','Fragrance that holds up in a phenyl base'];
+  var on=aiOn(),empty=!hist.length;
+  var status='<div class="info"><div class="info-top"><span class="dot '+(on?'ok':'')+'"></span><b>'+(on?'AI is ON':'Works offline')+'</b><span class="mut">'+(on?'answers from your catalogue':'catalogue search, nothing leaves your phone')+'</span><a class="pv" href="privacy.html">Privacy</a></div>'+
+    (on?'<label class="chk"><input type="checkbox" id="web"> Also search Wikipedia (free)</label>':'')+'</div>';
+  var welcome=empty?'<div class="welcome"><div class="kicker">Trivenkem knowledge base</div><h2>Instant answers for sales staff</h2><p class="mut">Ask about any of our fragrances for floor cleaner, dishwash, detergent, phenyl and fabric care.</p></div>'+
+    '<div class="tip"><b>Quick tip:</b> mention stability, dosage and the base type (acid, alkaline or surfactant). Prices and stock are not tracked here, so check with the sales team.</div>':'';
+  var chips=empty?'<div class="sec-h">Common questions <span class="mut">tap to ask</span></div><div class="chips qs">'+sugg.map(function(s){return '<button class="chip" data-q="'+esc(s)+'">'+esc(s)+'</button>'}).join('')+'</div>':'';
+  root.innerHTML=status+setup()+welcome+chips+'<div id="chat"></div>'+
    '<div class="composer"><div class="row"><input type="text" id="aq" placeholder="Type the customer\'s doubt..." autocomplete="off"><button class="btn y" id="as">Ask</button></div>'+
-   (hist.length?'<div class="mut" style="margin-top:6px"><a href="#" id="ac2">Clear chat</a> &middot; Confirm technical details with Givaudan.</div>':'')+'</div>';
+   (empty?'':'<div class="mut foot"><a href="#" id="ac2">Clear chat</a> &middot; Confirm technical details with Givaudan.</div>')+'</div>';
   var go=function(){var i=document.getElementById('aq'),v=i.value;i.value='';ask(v).then(function(){if(!document.getElementById('ac2'))view(root)})};
   document.getElementById('as').onclick=go;
   document.getElementById('aq').onkeydown=function(e){if(e.key==='Enter')go()};
