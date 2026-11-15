@@ -68,7 +68,8 @@ async function listModels(){
   return (j.models||[]).filter(function(m){return (m.supportedGenerationMethods||[]).indexOf('generateContent')>-1&&/gemini/.test(m.name)&&!/embed|image|tts|live|audio|vision|robotics|computer|thinking/.test(m.name)})
     .map(function(m){return m.name.replace(/^models\//,'')}).sort(function(x,y){return sc(y)-sc(x)})}
 async function callG(model,body,signal){
-  return fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},body:body})}
+  try{return await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:signal,headers:{'Content-Type':'application/json','x-goog-api-key':getKey()},body:body})}
+  catch(e){if(e&&e.name==='AbortError')throw e;var f={ok:false,status:0,json:async function(){return{}},clone:function(){return f}};return f}}
 async function errOf(r){var e=await r.clone().json().catch(function(){return{}});return (e.error&&e.error.message)||''}
 function modelGone(r,msg){return r.status===404||/not found|not supported|no longer available|deprecated/i.test(msg)}
 async function direct(msgs,context,web,text){
@@ -79,18 +80,18 @@ async function direct(msgs,context,web,text){
   if(r.ok)setModel(tried[0]);
   else{
     msg=await errOf(r);
-    if(r.status>=500){
-      for(var n=0;n<2&&r.status>=500;n++){
+    if(r.status>=500||r.status===0){
+      for(var n=0;n<2&&(r.status>=500||r.status===0);n++){
         await new Promise(function(s){setTimeout(s,2000*(n+1))});
         r=await callG(tried[0],body,ac.signal);
         if(r.ok){setModel(tried[0]);break}
         msg=await errOf(r)}
-      if(!r.ok&&r.status>=500){
+      if(!r.ok&&(r.status>=500||r.status===0)){
         try{var alt=await listModels();
           for(var q=0,t2=0;q<alt.length&&t2<2;q++){
             if(tried.indexOf(alt[q])>-1)continue;
             tried.push(alt[q]);t2++;r=await callG(alt[q],body,ac.signal);
-            if(r.ok)break;msg=await errOf(r);if(r.status<500)break}}catch(e){}}}
+            if(r.ok)break;msg=await errOf(r);if(r.status<500&&r.status!==0)break}}catch(e){}}}
     if(!r.ok&&modelGone(r,msg)){
       var cand=[],sug=/use\s+models\/(gemini-[A-Za-z0-9.\-]+)/i.exec(msg);
       if(sug)cand.push(sug[1]);
@@ -104,6 +105,7 @@ async function direct(msgs,context,web,text){
   if(r.status===429)throw new Error('limit');
   if(!r.ok){
     if(/api key|permission|denied|unauthorized|billing/i.test(msg)&&(r.status===400||r.status===401||r.status===403))throw new Error('key');
+    if(r.status===0)throw new Error('Could not reach Google. Check your internet, and turn off VPN, Private DNS or data saver, then try again');
     if(r.status>=500)throw new Error('Google is busy right now ('+r.status+'). Please try again in a minute');
     throw new Error('Google said '+r.status+(msg?': '+msg.slice(0,160):''))}
   var j=await r.json(),t=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(function(p){return p.text||''}).join('').trim();
