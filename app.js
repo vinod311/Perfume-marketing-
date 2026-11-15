@@ -4,6 +4,12 @@ var APPS={F:'Floor cleaner',D:'Detergent',W:'Dishwash',T:'Toilet & bathroom',P:'
 var ALIAS={F:'floor mop surface',D:'detergent powder liquid washing wash',W:'dishwash dish vessel utensil',T:'toilet bathroom bowl lavatory',P:'phenyl disinfectant',S:'softener conditioner fabric',A:'air freshener room spray freshner'};
 var db, $=function(s){return document.querySelector(s)}, app=$('#app'), q=$('#q');
 var st={apps:[],fam:'',star:false};
+function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function samples(){return lsGet('trv_samples',[])}
+function techOf(id){return (lsGet('trv_tech',{}))[id]||{}}
+function dispatchList(){return lsGet('trv_dispatch',[])}
+function stockOf(id){return (lsGet('trv_stock',{}))[id]||''}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function norm(s){return String(s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim()}
 function uid(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})}
@@ -110,6 +116,22 @@ function home(top){
   var h='<div class="chips" id="ac">'+Object.keys(APPS).map(function(c){return '<button class="chip'+(st.apps.indexOf(c)>-1?' on':'')+'" data-app="'+c+'">'+esc(APPS[c])+'</button>'}).join('')+'</div>'+
    '<div class="chips" id="fc"><button class="chip'+(st.star?' on':'')+'" data-star-f="1">\u2605 Top picks</button>'+families().map(function(x){return '<button class="chip'+(st.fam===x?' on':'')+'" data-fam="'+esc(x)+'">'+esc(x)+'</button>'}).join('')+'</div><div id="res"></div>';
   app.innerHTML=h;renderRes()}
+function samplesView(){
+  var l=samples().slice().sort(function(x,y){return (y.date||'').localeCompare(x.date||'')});
+  app.innerHTML='<a class="back" href="#/top">\u2039 Back</a><div class="sec-t" style="margin-top:4px">Sample log</div><p class="mut">Samples you gave out. Stored on this phone only. No customer names.</p>'+
+   (l.length?l.map(function(s){var f=byId(s.fid);return '<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b>'+esc(f?f.name:'(removed fragrance)')+'</b><a href="#" data-sdel="'+s.id+'" class="mut">Remove</a></div><div class="mut">'+esc(s.date||'')+'</div><div>'+esc(s.note||'')+'</div></div>'}).join(''):'<div class="card">No samples logged yet. Open a fragrance and tap Log sample.</div>');
+  app.onclick=function(e){var d=e.target.closest('[data-sdel]');if(d){e.preventDefault();lsSet('trv_samples',samples().filter(function(x){return x.id!==d.dataset.sdel}));samplesView()}}}
+function dispatchView(){
+  var l=dispatchList();
+  var rows=l.map(function(d){var f=byId(d.fid);return '<div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b>'+esc(f?f.name:'(removed fragrance)')+'</b><a href="#" data-ddel="'+d.id+'" class="mut">Remove</a></div><div class="mut">Qty: '+esc(d.qty||'-')+' &middot; '+(d.sent?'<span class="tag">Sent</span>':'<span class="tag p">Pending</span>')+'</div><div>'+esc(d.where||'')+'</div><div class="row" style="margin-top:8px"><button class="btn" data-dtog="'+d.id+'">'+(d.sent?'Mark pending':'Mark sent')+'</button></div></div>'}).join('');
+  var opts=db.f.slice().sort(function(x,y){return x.name.localeCompare(y.name)}).map(function(f){return '<option value="'+f.id+'">'+esc(f.name)+'</option>'}).join('');
+  app.innerHTML='<a class="back" href="#/top">\u2039 Back</a><div class="sec-t" style="margin-top:4px">Dispatch list</div><p class="mut">Samples and orders you still need to send. Stored on this phone only. Leave any field blank.</p>'+
+   '<div class="card"><label>Fragrance</label><select id="dsf"><option value="">Choose fragrance</option>'+opts+'</select><label>Quantity</label><input type="text" id="dsq" placeholder="Not entered"><label>Send to (place or note, no customer name)</label><input type="text" id="dsw" placeholder="Not entered"><p><button class="btn y" id="dsa">Add to dispatch</button></p></div>'+
+   (rows||'<div class="card">Nothing to dispatch yet.</div>');
+  $('#dsa').onclick=function(){var fid=$('#dsf').value;if(!fid){toast('Choose a fragrance');return}var l2=dispatchList();l2.push({id:uid(),fid:fid,qty:$('#dsq').value.trim(),where:$('#dsw').value.trim(),sent:false});lsSet('trv_dispatch',l2);dispatchView()};
+  app.onclick=function(e){var d=e.target.closest('[data-ddel]'),t=e.target.closest('[data-dtog]');
+    if(d){e.preventDefault();lsSet('trv_dispatch',dispatchList().filter(function(x){return x.id!==d.dataset.ddel}));dispatchView()}
+    if(t){e.preventDefault();lsSet('trv_dispatch',dispatchList().map(function(x){if(x.id===t.dataset.dtog)x.sent=!x.sent;return x}));dispatchView()}}}
 function renderRes(){
   var r=results(),hasQ=!!norm(q.value),el=$('#res');if(!el)return;
   $('#clr').hidden=!q.value;
@@ -129,13 +151,22 @@ function detail(id){
    '<div class="note"><b>BASE NOTES</b><span>'+esc(f.base||'-')+'</span></div></div>'+
    '<div class="card"><div class="sec-t">Suitable applications</div><div>'+(ok||'<span class="mut">None listed. Edit to add.</span>')+'</div></div>'+
    (f.sell?'<div class="pitch"><div class="sec-t">Tell the customer</div><p>'+esc(f.sell)+'</p><button class="btn" id="cp">Copy pitch</button></div>':'')+
+   '<div class="card"><div class="sec-t">Stock on hand (you enter)</div><div class="row" style="flex-wrap:nowrap"><input type="text" id="stk" value="'+esc(stockOf(f.id))+'" placeholder="e.g. 20 kg in store" style="flex:1"><button class="btn" id="stv">Save</button></div></div>'+
+   '<div class="card"><div class="sec-t">Samples logged: '+samples().filter(function(s){return s.fid===f.id}).length+'</div><div class="row" style="flex-wrap:nowrap"><button class="btn y" id="lg">Log sample</button><a class="btn" href="#/samples">Sample log</a></div><div id="lgf"></div></div>'+
+      '<div class="card"><div class="sec-t">Technical details (you enter; blank = not entered)</div>'+
+   '<label>Dosage range (from your COA or supplier)</label><input type="text" id="t_dosage" value="'+esc(techOf(f.id).dosage||'')+'" placeholder="Not entered">'+'<label>pH range</label><input type="text" id="t_ph" value="'+esc(techOf(f.id).ph||'')+'" placeholder="Not entered">'+'<label>Flashpoint</label><input type="text" id="t_flash" value="'+esc(techOf(f.id).flash||'')+'" placeholder="Not entered">'+'<label>Tenacity / longevity</label><input type="text" id="t_tenacity" value="'+esc(techOf(f.id).tenacity||'')+'" placeholder="Not entered">'+'<label>Stability notes</label><input type="text" id="t_stability" value="'+esc(techOf(f.id).stability||'')+'" placeholder="Not entered">'+'<label>IFRA status (as per your certificate)</label><input type="text" id="t_ifra" value="'+esc(techOf(f.id).ifra||'')+'" placeholder="Not entered">'+'<label>Batch / lot number</label><input type="text" id="t_lot" value="'+esc(techOf(f.id).lot||'')+'" placeholder="Not entered">'+'<label>COA date</label><input type="text" id="t_coa" value="'+esc(techOf(f.id).coa||'')+'" placeholder="Not entered">'+'<label>Reference link (optional)</label><input type="text" id="t_ref" value="'+esc(techOf(f.id).ref||'')+'" placeholder="Not entered">'+
+   '<div class="row" style="margin-top:10px"><button class="btn y" id="tsv">Save details</button></div></div>'+
    (f.avoid?'<div class="card warnc"><b>Note:</b> '+esc(f.avoid)+'</div>':'')+
    (f.keywords?'<div class="card"><div class="sec-t">Customer may say</div><div class="mut">'+esc(f.keywords.split(',').join(', '))+'</div></div>':'')+
    '<div class="card"><div class="sec-t">My notes</div><div style="white-space:pre-wrap">'+(f.notes?esc(f.notes):'<span class="mut">Nothing yet. Tap Edit to add price, stock or customer feedback.</span>')+'</div></div>'+
    (sim?'<div class="card"><div class="sec-t">Similar ('+esc(f.family)+')</div><div>'+sim+'</div></div>':'')+
    '<p class="mut small">Always ask the customer to test the sample in their own base. Confirm dosage and stability with Givaudan.</p>'+
-   '<div class="dbtns"><a class="btn y" href="#/edit/'+f.id+'">Edit</a><button class="btn" id="shr">Share</button><button class="btn" data-ask="'+esc('Tell me about '+f.name+': best uses, how to pitch it, and what to tell a customer who has doubts about it.')+'">Ask AI</button><button class="btn r" id="del">Delete</button></div>';
+   '<div class="dbtns"><a class="btn y" href="#/edit/'+f.id+'">Edit</a><button class="btn" id="shr">Share</button><button class="btn" id="wap">WhatsApp pitch</button><button class="btn" data-ask="'+esc('Tell me about '+f.name+': best uses, how to pitch it, and what to tell a customer who has doubts about it.')+'">Ask AI</button><button class="btn r" id="del">Delete</button></div>';
   var cp=$('#cp');if(cp)cp.onclick=function(){var t=f.sell||'';if(navigator.clipboard){navigator.clipboard.writeText(t);toast('Pitch copied')}else toast('Copy not supported')};
+  var tsv=$('#tsv');if(tsv)tsv.onclick=function(){var m=lsGet('trv_tech',{}),o={};o['dosage']=$('#t_dosage').value.trim();o['ph']=$('#t_ph').value.trim();o['flash']=$('#t_flash').value.trim();o['tenacity']=$('#t_tenacity').value.trim();o['stability']=$('#t_stability').value.trim();o['ifra']=$('#t_ifra').value.trim();o['lot']=$('#t_lot').value.trim();o['coa']=$('#t_coa').value.trim();o['ref']=$('#t_ref').value.trim();m[f.id]=o;lsSet('trv_tech',m);toast('Details saved');detail(f.id)};
+  var stv=$('#stv');if(stv)stv.onclick=function(){var m=lsGet('trv_stock',{});m[f.id]=$('#stk').value.trim();lsSet('trv_stock',m);toast('Stock saved')};
+  var wap=$('#wap');if(wap)wap.onclick=function(){var t='*'+f.name+'* ('+f.family+')\n'+f.smell+(f.sell?'\n\n'+f.sell:'')+'\n\nTrivenkem Agencies';window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')};
+  var lg=$('#lg');if(lg)lg.onclick=function(){$('#lgf').innerHTML='<label>Date</label><input type="date" id="sd" value="'+new Date().toISOString().slice(0,10)+'"><label>Note (what was sent and how much; no customer name)</label><input type="text" id="sn" placeholder="e.g. 100 ml sample"><p><button class="btn y" id="ss">Save sample</button></p>';$('#ss').onclick=function(){var l=samples();l.push({id:uid(),fid:f.id,date:$('#sd').value,note:$('#sn').value.trim()});lsSet('trv_samples',l);toast('Sample logged');detail(f.id)}};
   $('#shr').onclick=function(){var t=f.name+' ('+f.family+')\n'+f.smell+'\nTop: '+f.top+' | Heart: '+f.heart+' | Base: '+f.base+'\nSuitable for: '+f.apps.map(function(c){return APPS[c]}).join(', ')+(f.sell?'\n'+f.sell:'');
     if(navigator.share)navigator.share({text:t}).catch(function(){});else if(navigator.clipboard){navigator.clipboard.writeText(t);toast('Copied')}};
   $('#del').onclick=function(){if(confirm('Delete '+f.name+'?')){db.f=db.f.filter(function(x){return x.id!==f.id});save();location.hash='#/'}}}
@@ -217,15 +248,16 @@ function tools(){
     if(mode==='replace'&&!confirm('Replace ALL current data with this file?')){e.target.value='';return}
     var rd=new FileReader();rd.onload=function(){importData(String(rd.result),fl.name,mode)};rd.readAsText(fl)};
   $('#rs').onclick=function(){if(confirm('Reset to the original catalogue? Your changes will be lost (also in Supabase).')){db=seed();save();toast('Reset done')}}}
+function setTheme(m){var d=m==='dark';document.documentElement.setAttribute('data-theme',d?'dark':'light');try{localStorage.setItem('trv_theme',d?'dark':'light')}catch(e){}var b=document.getElementById('th');if(b)b.innerHTML=d?'&#9728;':'&#9790;'}
 function route(){
   $('#cnt').textContent=db.f.length+' fragrances';
   var h=location.hash||'#/',p=h.split('/');var t=p[1]||'';
   document.querySelectorAll('#nav a').forEach(function(a){a.classList.toggle('on',a.dataset.t===(t===''?'home':t==='f'||t==='new'||t==='edit'?'':t))});
   $('#fab').style.display=(t===''||t==='top')?'block':'none';
   if(t==='f')detail(p[2]);else if(t==='edit')form(p[2]);else if(t==='new')form();
-  else if(t==='tools')tools();else if(t==='words')words();
+  else if(t==='tools')tools();else if(t==='words')words();else if(t==='samples')samplesView();else if(t==='dispatch')dispatchView();
   else if(t==='ai'&&window.TRV_AI)window.TRV_AI.view(app);
-  else if(t==='top'){st.star=true;home()}
+  else if(t==='top'){st.star=true;home();app.insertAdjacentHTML('beforeend','<div class="card"><div class="sec-t">Sample log</div><p class="mut">'+samples().length+' sample(s) logged on this phone.</p><div class="row" style="flex-wrap:nowrap"><a class="btn y" href="#/samples">Open sample log</a><a class="btn" href="#/dispatch">Dispatch list ('+dispatchList().filter(function(x){return !x.sent}).length+' pending)</a><a class="btn" href="#/">Browse all fragrances</a></div></div>')}
   else home();
   window.scrollTo(0,0)}
 document.addEventListener('click',function(e){
@@ -241,6 +273,8 @@ q.addEventListener('input',function(){var t=(location.hash.split('/')[1]||'');if
 $('#clr').onclick=function(){q.value='';q.focus();var t=(location.hash.split('/')[1]||'');t==='words'?words():renderRes();$('#clr').hidden=true};
 q.addEventListener('focus',function(){q.select()});
 window.addEventListener('hashchange',route);
+$('#th').onclick=function(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')};
+(function(){var c=document.documentElement.getAttribute('data-theme');var b=document.getElementById('th');if(b)b.innerHTML=c==='dark'?'&#9728;':'&#9790;'})();
 boot();window.TRV={parseCSV:parseCSV,toCSV:toCSV,fRow:fRow,COLS:COLS,fromRow:fromRow,results:results,score:score,db:function(){return db},sync:sync,boot:boot,dirty:dirty};
 if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
