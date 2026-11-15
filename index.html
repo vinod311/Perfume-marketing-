@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#131921">
+<title>Fragrance Finder - Trivenkem Agencies</title>
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css"></head>
+<body>
+<header>
+ <div class="brand"><span>Trivenkem <b>Fragrance Finder</b></span><small id="cnt"></small></div>
+ <div class="sb"><input id="q" type="search" placeholder="Search name, smell, rose, camphor, dishwash..." autocomplete="off" autocapitalize="off" spellcheck="false"><button class="x" id="clr" aria-label="Clear" hidden>&times;</button><button class="go" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#131921" stroke-width="2.5"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg></button></div>
+</header>
+<nav id="nav"><a href="#/" data-t="home">Search</a><a href="#/top" data-t="top">&#9733; Top picks</a><a href="#/words" data-t="words">Words</a><a href="#/ai" data-t="ai">Ask</a><a href="#/tools" data-t="tools">Import / Export</a></nav>
+<main id="app"></main>
+<a class="fab" href="#/new" id="fab">+ Add fragrance</a>
+<footer><a href="privacy.html">Privacy Policy</a> &middot; v6</footer>
+<script src="data.js"></script><script src="config.js"></script><script src="ai.js"></script><script src="app.js"></script>
+<script>(function(){function f(){var h=document.querySelector("header");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px")}f();addEventListener("resize",f);addEventListener("load",f)})()</script>
+</body></html>
