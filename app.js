@@ -99,10 +99,11 @@ function results(){
   return list}
 function appChips(f,full){return f.apps.map(function(c){return '<span class="ap">'+esc(full?APPS[c]:APPS[c].split(' ')[0].replace('&',''))+'</span>'}).join('')}
 function card(f,i,hasQ){
-  return '<a class="card item" href="#/f/'+f.id+'"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><div><h3>'+
-   (hasQ&&i===0?'<span class="tag">Best match</span>':'')+esc(f.name)+(f.tier==='Premium'?' <span class="tag p">Premium</span>':'')+'</h3><div class="mut">'+esc(f.family)+'</div></div>'+
+  return '<a class="card item" href="#/f/'+f.id+'"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><h3>'+
+   (hasQ&&i===0?'<span class="tag">Best match</span>':'')+esc(f.name)+(f.tier==='Premium'?' <span class="tag p">Premium</span>':'')+'</h3><span class="fam"><i></i>'+esc(f.family||'')+'</span></div>'+
    '<button class="star'+(f.star?' on':'')+'" data-star="'+f.id+'" aria-label="Priority">'+(f.star?'\u2605':'\u2606')+'</button></div>'+
-   '<div>'+esc(f.smell)+'</div><div style="margin-top:4px">'+appChips(f)+'</div>'+(f.sell?'<div class="mut" style="margin-top:4px">'+esc(f.sell)+'</div>':'')+'</a>'}
+   '<div class="smell">'+esc(f.smell)+'</div><div style="margin-top:8px">'+appChips(f)+'</div>'+
+   '<div class="row" style="justify-content:space-between;margin-top:8px">'+(f.sell?'<span class="mut">'+esc(f.sell)+'</span>':'<span></span>')+'<span class="fl">Formula \u203A</span></div></a>'}
 function families(){var o={};db.f.forEach(function(f){if(f.family)o[f.family]=1});return Object.keys(o).sort()}
 function home(top){
   if(top){st.star=true}
@@ -117,35 +118,44 @@ function renderRes(){
 function detail(id){
   var f=byId(id);if(!f){app.innerHTML='<div class="card">Not found. <a href="#/">Back</a></div>';return}
   var ok=f.apps.map(function(c){return '<span class="ap ok">\u2713 '+esc(APPS[c])+'</span>'}).join('');
-  var no=Object.keys(APPS).filter(function(c){return f.apps.indexOf(c)<0}).map(function(c){return '<span class="ap no">\u2717 '+esc(APPS[c])+'</span>'}).join('');
   var sim=db.f.filter(function(x){return x.id!==f.id&&x.family===f.family}).slice(0,6).map(function(x){return '<a class="ap" href="#/f/'+x.id+'">'+esc(x.name)+'</a>'}).join('');
-  app.innerHTML='<p><a href="#/" id="bk">\u2039 Back to results</a></p><div class="card"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><div><h2 style="margin:0">'+esc(f.name)+'</h2>'+
-   '<div class="mut">'+esc(f.family)+' '+(f.tier==='Premium'?'<span class="tag p">Premium</span>':'')+'</div></div><button class="star'+(f.star?' on':'')+'" data-star="'+f.id+'" aria-label="Priority">'+(f.star?'\u2605':'\u2606')+'</button></div>'+
-   '<p style="font-size:17px;margin:8px 0">'+esc(f.smell)+'</p>'+(f.sell?'<div class="big">'+esc(f.sell)+'</div>':'')+
-   '<h4>Notes: Top / Middle / Base</h4><div class="pyr"><div><b>Top</b><span>'+esc(f.top||'-')+'</span></div><div><b>Middle</b><span>'+esc(f.heart||'-')+'</span></div><div><b>Base</b><span>'+esc(f.base||'-')+'</span></div></div>'+
-   '<h4>Suitable for</h4><div>'+(ok||'<span class="mut">None listed</span>')+'</div>'+
-   '<h4>Not suitable for / not in catalogue list</h4><div>'+(no||'<span class="mut">Listed for all products</span>')+'</div>'+(f.avoid?'<p style="color:var(--bad);margin:8px 0 0"><b>Note:</b> '+esc(f.avoid)+'</p>':'')+
-   (f.keywords?'<h4>Customer may say</h4><div class="mut">'+esc(f.keywords.split(',').join(', '))+'</div>':'')+
-   '<h4>My notes</h4><div style="white-space:pre-wrap">'+(f.notes?esc(f.notes):'<span class="mut">Nothing yet. Tap Edit to add price, stock or customer feedback.</span>')+'</div>'+
-   (sim?'<h4>Similar ('+esc(f.family)+')</h4><div>'+sim+'</div>':'')+
-   '<p class="mut" style="margin-top:14px">Always ask the customer to test the sample in their own base. Confirm dosage and stability with Givaudan.</p>'+
-   '<div class="row" style="margin-top:10px"><a class="btn y" href="#/edit/'+f.id+'">Edit</a><button class="btn" id="shr">Share summary</button><button class="btn" data-ask="'+esc('Tell me about '+f.name+': best uses, how to pitch it, and what to tell a customer who has doubts about it.')+'">Ask</button><button class="btn r" id="del">Delete</button></div></div>';
-  $('#shr').onclick=function(){var t=f.name+' ('+f.family+')\n'+f.smell+'\nTop: '+f.top+' | Heart: '+f.heart+' | Base: '+f.base+'\nSuitable for: '+f.apps.map(function(c){return APPS[c]}).join(', ')+(f.sell?'\n'+f.sell:'')+'\n- Trivenkem Agencies, 97910 63733';
+  app.innerHTML='<a class="back" href="#/">\u2039 Back to results</a>'+
+   '<div class="dhead"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start"><div style="min-width:0"><span class="fam"><i></i>'+esc(f.family||'Fragrance')+'</span>'+(f.tier==='Premium'?' <span class="tag p">Premium</span>':'')+'<h2 class="dname">'+esc(f.name)+'</h2></div>'+
+   '<button class="star big-star'+(f.star?' on':'')+'" data-star="'+f.id+'" aria-label="Top pick">'+(f.star?'\u2605':'\u2606')+'</button></div></div>'+
+   '<div class="card"><div class="sec-t"><span class="ico">\u266A</span> Smell profile</div><p class="smelltxt">'+esc(f.smell||'-')+'</p></div>'+
+   '<div class="card"><div class="sec-t">Notes (top, middle, base)</div>'+
+   '<div class="note"><b>TOP NOTES</b><span>'+esc(f.top||'-')+'</span></div>'+
+   '<div class="note"><b>MIDDLE NOTES</b><span>'+esc(f.heart||'-')+'</span></div>'+
+   '<div class="note"><b>BASE NOTES</b><span>'+esc(f.base||'-')+'</span></div></div>'+
+   '<div class="card"><div class="sec-t">Suitable applications</div><div>'+(ok||'<span class="mut">None listed. Edit to add.</span>')+'</div></div>'+
+   (f.sell?'<div class="pitch"><div class="sec-t">Tell the customer</div><p>'+esc(f.sell)+'</p><button class="btn" id="cp">Copy pitch</button></div>':'')+
+   (f.avoid?'<div class="card warnc"><b>Note:</b> '+esc(f.avoid)+'</div>':'')+
+   (f.keywords?'<div class="card"><div class="sec-t">Customer may say</div><div class="mut">'+esc(f.keywords.split(',').join(', '))+'</div></div>':'')+
+   '<div class="card"><div class="sec-t">My notes</div><div style="white-space:pre-wrap">'+(f.notes?esc(f.notes):'<span class="mut">Nothing yet. Tap Edit to add price, stock or customer feedback.</span>')+'</div></div>'+
+   (sim?'<div class="card"><div class="sec-t">Similar ('+esc(f.family)+')</div><div>'+sim+'</div></div>':'')+
+   '<p class="mut small">Always ask the customer to test the sample in their own base. Confirm dosage and stability with Givaudan.</p>'+
+   '<div class="dbtns"><a class="btn y" href="#/edit/'+f.id+'">Edit</a><button class="btn" id="shr">Share</button><button class="btn" data-ask="'+esc('Tell me about '+f.name+': best uses, how to pitch it, and what to tell a customer who has doubts about it.')+'">Ask AI</button><button class="btn r" id="del">Delete</button></div>';
+  var cp=$('#cp');if(cp)cp.onclick=function(){var t=f.sell||'';if(navigator.clipboard){navigator.clipboard.writeText(t);toast('Pitch copied')}else toast('Copy not supported')};
+  $('#shr').onclick=function(){var t=f.name+' ('+f.family+')\n'+f.smell+'\nTop: '+f.top+' | Heart: '+f.heart+' | Base: '+f.base+'\nSuitable for: '+f.apps.map(function(c){return APPS[c]}).join(', ')+(f.sell?'\n'+f.sell:'');
     if(navigator.share)navigator.share({text:t}).catch(function(){});else if(navigator.clipboard){navigator.clipboard.writeText(t);toast('Copied')}};
   $('#del').onclick=function(){if(confirm('Delete '+f.name+'?')){db.f=db.f.filter(function(x){return x.id!==f.id});save();location.hash='#/'}}}
 function form(id){
   var f=id?byId(id):{name:'',apps:[],family:'',smell:'',top:'',heart:'',base:'',sell:'',keywords:'',avoid:'',notes:'',tier:'Standard',star:false};
   if(!f){location.hash='#/';return}
   function tx(k,l,ph){return '<label>'+l+'</label><input type="text" id="e_'+k+'" value="'+esc(f[k])+'" placeholder="'+(ph||'')+'">'}
-  app.innerHTML='<div class="card"><h2>'+(id?'Edit':'Add')+' fragrance</h2>'+tx('name','Name *')+
-   '<label>Family</label><input type="text" id="e_family" list="fl" value="'+esc(f.family)+'"><datalist id="fl">'+families().map(function(x){return '<option value="'+esc(x)+'">'}).join('')+'</datalist>'+
-   '<label>Suitable for</label><div>'+Object.keys(APPS).map(function(c){return '<label class="chk"><input type="checkbox" class="ea" value="'+c+'"'+(f.apps.indexOf(c)>-1?' checked':'')+'> '+esc(APPS[c])+'</label>'}).join('')+'</div>'+
-   tx('smell','Smell in one line')+tx('top','Top note (first smell)')+tx('heart','Middle note (heart, main character)')+tx('base','Base note (lasting smell)')+tx('sell','Selling line (what to tell the customer)')+
-   tx('keywords','Customer words (comma separated)','rose, gulab, premium')+tx('avoid','Not suitable note (optional)')+
+  var pills=Object.keys(APPS).map(function(c){return '<label class="pill"><input type="checkbox" class="ea" value="'+c+'"'+(f.apps.indexOf(c)>-1?' checked':'')+'><span>'+esc(APPS[c])+'</span></label>'}).join('');
+  app.innerHTML='<div class="card fhead"><div class="sec-t">'+(id?'Edit fragrance':'Add new fragrance')+'</div><div class="mut">Fill in what staff need to explain it to a customer.</div></div>'+
+   '<div class="card"><div class="sec-t">Fragrance name *</div>'+tx('name','','e.g. Arabian Rose')+'</div>'+
+   '<div class="card"><div class="sec-t">Family</div><input type="text" id="e_family" list="fl" value="'+esc(f.family)+'" placeholder="e.g. Citrus, Rose, Woody"><datalist id="fl">'+families().map(function(x){return '<option value="'+esc(x)+'">'}).join('')+'</datalist></div>'+
+   '<div class="card"><div class="sec-t">Smell description</div>'+tx('smell','','One line on how it smells')+'</div>'+
+   '<div class="card"><div class="sec-t">Notes (top, middle, base)</div>'+tx('top','Top note (first smell)')+tx('heart','Middle note (heart, main character)')+tx('base','Base note (lasting smell)')+'</div>'+
+   '<div class="card"><div class="sec-t">Suitable applications</div><p class="mut">Tap the products this fragrance suits.</p><div class="pills">'+pills+'</div></div>'+
+   '<div class="pitch"><div class="sec-t">Tell the customer (selling line)</div><textarea id="e_sell" placeholder="What to say to the customer">'+esc(f.sell)+'</textarea></div>'+
+   '<div class="card"><div class="sec-t">Customer words and other details</div>'+tx('keywords','Customer words (comma separated)','rose, gulab, premium')+tx('avoid','Not suitable note (optional)')+
    '<label>Level</label><select id="e_tier"><option'+(f.tier!=='Premium'?' selected':'')+'>Standard</option><option'+(f.tier==='Premium'?' selected':'')+'>Premium</option></select>'+
    '<label>My notes (price, stock, customer feedback)</label><textarea id="e_notes">'+esc(f.notes)+'</textarea>'+
-   '<label class="chk"><input type="checkbox" id="e_star"'+(f.star?' checked':'')+'> \u2605 Top pick (shows first in search)</label>'+
-   '<div class="row" style="margin-top:12px"><button class="btn y" id="sv">Save</button><a class="btn" href="#/'+(id?'f/'+id:'')+'">Cancel</a></div></div>';
+   '<label class="chk"><input type="checkbox" id="e_star"'+(f.star?' checked':'')+'> \u2605 Top pick (shows first in search)</label></div>'+
+   '<div class="bar"><a class="btn" href="#/'+(id?'f/'+id:'')+'">Cancel</a><button class="btn y" id="sv">Save fragrance</button></div>';
   $('#sv').onclick=function(){var n=$('#e_name').value.trim();if(!n){toast('Name is required');return}
     var dup=db.f.find(function(x){return norm(x.name)===norm(n)&&x.id!==(id||'')});if(dup){toast('Name already exists');return}
     var o=f;['name','family','smell','top','heart','base','sell','keywords','avoid','notes'].forEach(function(k){o[k]=$('#e_'+k).value.trim()});
@@ -154,9 +164,12 @@ function form(id){
 function words(){
   var w=db.w.slice().sort(function(a,b){return a.word.localeCompare(b.word)}),s=norm(q.value);
   if(s)w=w.filter(function(x){return norm(x.word+' '+x.meaning).indexOf(s)>-1});
-  app.innerHTML='<div class="card"><h2>Words customers use</h2><div class="mut">The search box above filters this list.</div></div>'+
-   w.map(function(x){return '<div class="card"><b>'+esc(x.word)+'</b> <a href="#" data-dw="'+x.id+'" class="mut" style="float:right">remove</a><div>'+esc(x.meaning)+'</div></div>'}).join('')+
-   '<div class="card"><h4>Add a word</h4><input type="text" id="nw" placeholder="Word"><label>Meaning</label><input type="text" id="nm" placeholder="Meaning in simple words"><p><button class="btn y" id="aw">Add word</button></p></div>';
+  var letters={};db.w.forEach(function(x){letters[(x.word||'#').charAt(0).toUpperCase()]=1});
+  app.innerHTML='<div class="sec-t" style="margin-top:4px">Smell glossary</div><p class="mut">Simple meanings of smell words for explaining to customers. The search box above filters this list.</p>'+
+   '<div class="chips">'+Object.keys(letters).sort().map(function(L){return '<span class="chip">'+esc(L)+'</span>'}).join('')+'</div>'+
+   '<div class="mut" style="margin:4px 0 10px">Showing '+w.length+' words</div>'+
+   w.map(function(x){return '<div class="card wcard"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b class="wword">'+esc(x.word)+'</b><a href="#" data-dw="'+x.id+'" class="mut">Remove</a></div><div style="margin-top:4px">'+esc(x.meaning)+'</div></div>'}).join('')+
+   '<div class="card"><div class="sec-t">Add a word</div><input type="text" id="nw" placeholder="Word"><label>Meaning</label><input type="text" id="nm" placeholder="Meaning in simple words"><p><button class="btn y" id="aw">Add word</button></p></div>';
   $('#aw').onclick=function(){var a=$('#nw').value.trim(),b=$('#nm').value.trim();if(!a||!b){toast('Enter word and meaning');return}db.w.push({id:uid(),word:a,meaning:b});save();words()}}
 function dl(name,text,type){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 var COLS=['name','family','applications','smell','top','middle','base','sell','keywords','avoid','notes','tier','priority'];

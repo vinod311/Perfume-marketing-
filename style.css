@@ -31,7 +31,7 @@ h4{margin:16px 0 6px;font-size:12px;color:var(--mut);text-transform:uppercase;le
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);box-shadow:var(--shadow)}
 .chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
-.ap{display:inline-block;background:#F1F3F5;border:0;border-radius:999px;padding:4px 10px;margin:3px 5px 3px 0;font-size:13px;color:var(--ink);font-weight:500}
+.ap{display:inline-block;background:#FDEBD0;border:0;border-radius:999px;padding:4px 10px;margin:3px 5px 3px 0;font-size:13px;color:#7A4300;font-weight:600}
 .ap.ok{background:#E3F4EA;color:#0B5C2E}.ap.no{background:#FBE9E7;color:var(--bad)}
 .star{border:0;background:none;font-size:28px;color:#B5BCC6;padding:0 4px;line-height:1}.star.on{color:var(--o)}
 .big{background:var(--tint);border-left:4px solid var(--o);border-radius:8px;padding:10px 12px;margin:10px 0;font-weight:600}
@@ -77,3 +77,48 @@ footer a{color:var(--mut);text-decoration:underline}
 #chat{padding-bottom:130px}
 /* search results / list */
 .item{display:block;background:#fff;border-radius:var(--r);padding:14px;margin:0 0 12px;box-shadow:var(--shadow)}
+
+/* Stitch-style refinements */
+.logo{width:36px;height:36px;border-radius:10px;background:var(--o);color:var(--navy);display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;flex:none;margin-right:10px}
+.ttl{color:#fff;font-size:17px;font-weight:600;flex:1;min-width:0;display:flex;align-items:center}
+.brand{justify-content:flex-start}.brand small{margin-left:auto}
+.item h3{font-size:19px;margin:0 0 4px}
+.fam{display:inline-flex;align-items:center;gap:6px;background:#EEF1F4;color:var(--ink);font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px}
+.fam i{width:6px;height:6px;border-radius:50%;background:var(--o);display:inline-block}
+.smell{background:#F4F5F7;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:15px}
+.fl{color:var(--ink);font-weight:700;font-size:14px}
+.item .star{font-size:26px;color:var(--o)}
+nav a{gap:3px}nav a svg{color:inherit}
+nav a span{display:block}
+nav a.on svg{color:var(--navy)}
+nav a.on::before{display:none}
+nav a.on{box-shadow:inset 0 3px 0 var(--o)}
+.fab{font-size:16px;padding:14px 22px}
+.welcome .flask{width:48px;height:48px;border-radius:50%;background:rgba(255,164,28,.18);display:flex;align-items:center;justify-content:center;margin-bottom:10px;color:var(--o)}
+.ttl{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.brand small{font-size:12px;padding:4px 9px}
+/* Stitch detail, form and glossary */
+.back{display:inline-block;margin:2px 0 10px;font-weight:700;color:var(--ink)}
+.dhead{margin:0 0 10px}.dname{font-size:26px;margin:6px 0 0;letter-spacing:-.01em}
+.big-star{font-size:30px;background:#fff;border-radius:50%;width:48px;height:48px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:0}
+.sec-t{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.smelltxt{font-size:17px;margin:0;line-height:1.5}
+.note{background:#F4F5F7;border-radius:10px;padding:10px 12px;margin:0 0 8px}
+.note b{display:block;font-size:11px;letter-spacing:.08em;color:var(--mut);margin-bottom:2px}
+.note span{font-size:16px}
+.pitch{background:var(--tint);border-radius:var(--r);padding:14px;margin:0 0 12px;border:1px solid #FFE0A3}
+.pitch p{margin:0 0 10px;font-size:16px;line-height:1.5}
+.pitch textarea{background:#fff;min-height:80px}
+.warnc{border-left:4px solid var(--bad);color:var(--bad)}
+.small{font-size:13px}
+.dbtns{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.fhead{background:var(--navy);color:#fff}.fhead .sec-t{color:var(--o)}.fhead .mut{color:#D5DBE3}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;margin:0;cursor:pointer;box-shadow:var(--shadow)}
+.pill input{width:16px;height:16px;margin:0;accent-color:var(--o)}
+.pill:has(input:checked){background:var(--tint);border-color:var(--o)}
+.bar{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;justify-content:space-between;z-index:26}
+.bar .btn{flex:1;text-align:center}
+.wcard{padding:12px 14px}.wword{font-size:17px}
+.dhead .fam{margin-bottom:0}
+.item .fam{margin-top:4px}
