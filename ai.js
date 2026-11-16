@@ -11,10 +11,11 @@ function rank(text){
     .filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s}).map(function(x){return x.f})}
 var APPN={F:'Floor cleaner',D:'Detergent',W:'Dishwash',T:'Toilet/bathroom',P:'Phenyl',S:'Fabric softener',A:'Air freshener'};
 // Private "My notes" (price, stock, feedback) are NEVER sent.
+function coaTxt(f){var c=(window.COA_DATA||{})[f.name];if(!c)return '';var p=[];if(c.flash)p.push('flashpoint '+c.flash);if(c.ph)p.push('pH '+c.ph);if(c.lot)p.push('batch '+c.lot);if(c.coa)p.push('COA date '+c.coa);if(c.stability)p.push(c.stability);return p.length?' | COA (supplier, as printed): '+p.join('; '):''}
 function ctx(text){
   var db=T().db(),top=rank(text).slice(0,5);
   var all=db.f.map(function(f){return f.name+' ('+f.family+'; '+f.apps.map(function(c){return APPN[c]}).join('/')+')'}).join('\n');
-  var det=top.map(function(f){return f.name+' | '+f.family+' | '+f.smell+' | Top: '+f.top+' | Heart: '+f.heart+' | Base: '+f.base+' | Suitable: '+f.apps.map(function(c){return APPN[c]}).join(', ')+' | Sell: '+f.sell+(f.avoid?' | Note: '+f.avoid:'')}).join('\n');
+  var det=top.map(function(f){return f.name+' | '+f.family+' | '+f.smell+' | Top: '+f.top+' | Heart: '+f.heart+' | Base: '+f.base+' | Suitable: '+f.apps.map(function(c){return APPN[c]}).join(', ')+' | Sell: '+f.sell+(f.avoid?' | Note: '+f.avoid:'')+coaTxt(f)}).join('\n');
   var tk=toks(text),w=db.w.filter(function(x){var k=x.word.toLowerCase();return tk.some(function(t){return k.indexOf(t)>-1})}).slice(0,6).map(function(x){return x.word+': '+x.meaning}).join('\n');
   return 'CATALOGUE (all fragrances):\n'+all+'\n\nMOST RELEVANT DETAILS:\n'+(det||'none')+(w?'\n\nGLOSSARY:\n'+w:'')}
 function fmt(t){
