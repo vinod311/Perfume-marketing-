@@ -42,7 +42,13 @@ Surprising Woods|FTDSA|Woody & Premium|Soft, clean woody-floral with a rosy top 
 Tropical Fresh|WFDSA|Fruity|Juicy fruity-floral with an apple-plum juiciness|Apple, plum|Soft jasmine|Sweet balsamic|Juicy, fresh and long-lasting|apple,plum,fruity,juicy,tropical||Standard
 UCB 1003B IN|TFPA|Pine & Cool|Sharp, fresh citrus-eucalyptus with a cool lift|Citrus / Fresh|Green|Floral|Cool, hygienic "clean bathroom" feel|eucalyptus,pine,phenyl,bathroom,toilet,hygienic,medicated,cool,disinfectant|Not for detergent, softener or dishwash|Standard
 Ultra Power|FTDSA|Fresh & Aquatic|Fresh, clean woody-floral with a green touch|Fresh woody-fruity|Green, soft lavender-floral|Soft, powdery-sweet balsamic|Strong, fresh and long-lasting|strong,powerful,powdery,green,fresh||Standard
-Zarah|FTDSA|Jasmine|Sweet, fruity-floral jasmine with a fresh green-pine lift|Jasmine|Jasmine, Lactonic|Animalic, Jasmine|Sweet jasmine with a fresh green touch|jasmine,malligai,sweet,pine,green||Standard`;
+Zarah|FTDSA|Jasmine|Sweet, fruity-floral jasmine with a fresh green-pine lift|Jasmine|Jasmine, Lactonic|Animalic, Jasmine|Sweet jasmine with a fresh green touch|jasmine,malligai,sweet,pine,green||Standard
+Bright Sky|S|Citrus|Fresh citrus with spice, green lavender and a mossy, woody base|Citrus / Fresh, Spices|Lavender, Green|Mossy, Leather, Wood|Fresh citrus scent with a warm woody finish|citrus,fresh,spices,lavender,green,mossy,leather,wood||Standard
+Crush Light|S|Jasmine|Sweet jasmine, tuberose, pineapple and strawberry|Jasmine, Tuberose, Pineapple, Strawberry|Jasmine, Tuberose, Pineapple, Strawberry|Jasmine, Patchouli, Sandalwood, Balsamic|Sweet floral-fruity jasmine with a balsamic base|jasmine,tuberose,pineapple,strawberry,fruity,sweet,crush||Standard
+Amazon Tree|S|Floral|Bitter orange, carnation and a clean musk|Orange Bitter|Carnation|Musk|Light orange-floral with a clean musky base|orange,bitter orange,carnation,musk,floral,amazon||Standard
+Lakeshore INDE|S|Citrus|Fresh lemon and lime citrus with a musky base|Citrus / Hesperides, Fresh|Lemon, Lime|Musk|Fresh lime-lemon citrus with a musky base|lakeshore,lime,lemon,citrus,fresh,musk|Not yet confirmed. Check the Certificate of Analysis and safety data sheet before use. Label shows skin and aquatic hazard codes|Standard
+Thunder|S|Fresh|Melon, apple and pear watery freshness with a jasmine heart and musky base|Melon, Apple, Pear, Watery|Peach, Jasmine, Tuberose, Lily Of The Valley|Musky, Sandalwood, Amber, Solar|Fresh fruity-watery scent with a jasmine heart|thunder,melon,apple,pear,watery,jasmine,musky,fresh||Standard
+Jasmine Super|F|Green Floral|Green and floral jasmine with a musky base|Green|Floral|Musky|Clean green-floral with a musky base|jasmine,super,green,floral,musky||Standard`;
 window.SEED_WORDS = [
 ["Top note","First smell in the first minutes (citrus, lime, light floral)."],
 ["Middle (heart) note","Main character after the top fades (rose, jasmine, lavender)."],

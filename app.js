@@ -54,7 +54,7 @@ function loginView(msg){
   app.innerHTML='<div class="card"><h2>Login</h2><div class="mut">Use the email and password created in Supabase.</div><label>Email</label><input type="text" id="em" autocomplete="username" autocapitalize="off"><label>Password</label><input type="password" id="pw" autocomplete="current-password" style="width:100%;border:1px solid #888;border-radius:4px;padding:9px;font:inherit"><p style="color:var(--bad)" id="lm">'+esc(msg||'')+'</p><button class="btn y" id="li">Sign in</button></div>';
   var go=async function(){var r=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(r.error){$('#lm').textContent=r.error.message;return}start()};
   $('#li').onclick=go;$('#pw').onkeydown=function(e){if(e.key==='Enter')go()}}
-var SEEDV='notes-2026-11';
+var SEEDV='notes-2026-11b';
 async function start(){
   $('.sb').style.display='';$('#nav').style.display='';
   var ok=false;
@@ -62,7 +62,8 @@ async function start(){
   if(!ok){try{var c=localStorage.getItem(CK);if(c)db=JSON.parse(c)}catch(e){}
     if(!db||!db.f){if(sb){loginView('Could not connect. Check internet and try again.');return}db=seed();db.v=SEEDV;save()}
     if(db.v!==SEEDV){var sd=seed();var byN={};sd.f.forEach(function(x){byN[x.name]=x});
-      db.f.forEach(function(x){var s=byN[x.name];if(s){x.top=s.top;x.heart=s.heart;x.base=s.base}});db.v=SEEDV;save()}
+      db.f.forEach(function(x){var s=byN[x.name];if(s){x.top=s.top;x.heart=s.heart;x.base=s.base}});
+      sd.f.forEach(function(s){if(!db.f.some(function(x){return x.name===s.name})){db.f.push(s)}});db.v=SEEDV;save()}
     if(sb)toast('Offline: showing saved copy')}
   route()}
 async function boot(){
@@ -244,7 +245,7 @@ function tools(){
    '<div class="card"><h4>Export (backup)</h4><p class="mut">Take a backup after every update. Open the CSV in Excel to edit many items.</p><div class="row"><button class="btn y" id="xj">Backup (JSON)</button><button class="btn" id="xc">Excel (CSV)</button><button class="btn" id="xt">Blank template</button></div></div>'+
    '<div class="card"><h4>Import</h4><p class="mut">CSV or JSON. Same name = updated, new name = added. In CSV, "applications" can be words like Floor cleaner|Dishwash or letters F|W.</p>'+
    '<label class="chk"><input type="radio" name="im" value="merge" checked> Add and update</label><label class="chk"><input type="radio" name="im" value="replace"> Replace everything</label><p><input type="file" id="fi" accept=".csv,.json,text/csv,application/json"></p></div>'+
-   '<div class="card"><h4>Reset</h4><p class="mut">Remove all changes and go back to the original 42 fragrances.</p><button class="btn r" id="rs">Reset to catalogue</button></div>';
+   '<div class="card"><h4>Reset</h4><p class="mut">Remove all changes and go back to the original fragrance list.</p><button class="btn r" id="rs">Reset to catalogue</button></div>';
   if($('#lo'))$('#lo').onclick=function(){sb.auth.signOut().then(function(){try{localStorage.removeItem(CK)}catch(e){}location.reload()})};
   $('#xj').onclick=function(){dl('fragrances-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,1),'application/json')};
   $('#xc').onclick=function(){dl('fragrances-'+new Date().toISOString().slice(0,10)+'.csv',toCSV([COLS].concat(db.f.map(fRow))),'text/csv')};
