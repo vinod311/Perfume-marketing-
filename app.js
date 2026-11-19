@@ -54,12 +54,15 @@ function loginView(msg){
   app.innerHTML='<div class="card"><h2>Login</h2><div class="mut">Use the email and password created in Supabase.</div><label>Email</label><input type="text" id="em" autocomplete="username" autocapitalize="off"><label>Password</label><input type="password" id="pw" autocomplete="current-password" style="width:100%;border:1px solid #888;border-radius:4px;padding:9px;font:inherit"><p style="color:var(--bad)" id="lm">'+esc(msg||'')+'</p><button class="btn y" id="li">Sign in</button></div>';
   var go=async function(){var r=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(r.error){$('#lm').textContent=r.error.message;return}start()};
   $('#li').onclick=go;$('#pw').onkeydown=function(e){if(e.key==='Enter')go()}}
+var SEEDV='notes-2026-11';
 async function start(){
   $('.sb').style.display='';$('#nav').style.display='';
   var ok=false;
   if(sb){try{await pull();ok=true}catch(e){console.warn(e)}}
   if(!ok){try{var c=localStorage.getItem(CK);if(c)db=JSON.parse(c)}catch(e){}
-    if(!db||!db.f){if(sb){loginView('Could not connect. Check internet and try again.');return}db=seed();save()}
+    if(!db||!db.f){if(sb){loginView('Could not connect. Check internet and try again.');return}db=seed();db.v=SEEDV;save()}
+    if(db.v!==SEEDV){var sd=seed();var byN={};sd.f.forEach(function(x){byN[x.name]=x});
+      db.f.forEach(function(x){var s=byN[x.name];if(s){x.top=s.top;x.heart=s.heart;x.base=s.base}});db.v=SEEDV;save()}
     if(sb)toast('Offline: showing saved copy')}
   route()}
 async function boot(){
