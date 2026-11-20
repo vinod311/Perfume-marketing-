@@ -48,7 +48,8 @@ Crush Light|S|Jasmine|Sweet jasmine, tuberose, pineapple and strawberry|Jasmine,
 Amazon Tree|S|Floral|Bitter orange, carnation and a clean musk|Orange Bitter|Carnation|Musk|Light orange-floral with a clean musky base|orange,bitter orange,carnation,musk,floral,amazon||Standard
 Lakeshore INDE|S|Citrus|Fresh lemon and lime citrus with a musky base|Citrus / Hesperides, Fresh|Lemon, Lime|Musk|Fresh lime-lemon citrus with a musky base|lakeshore,lime,lemon,citrus,fresh,musk|Not yet confirmed. Check the Certificate of Analysis and safety data sheet before use. Label shows skin and aquatic hazard codes|Standard
 Thunder|S|Fresh|Melon, apple and pear watery freshness with a jasmine heart and musky base|Melon, Apple, Pear, Watery|Peach, Jasmine, Tuberose, Lily Of The Valley|Musky, Sandalwood, Amber, Solar|Fresh fruity-watery scent with a jasmine heart|thunder,melon,apple,pear,watery,jasmine,musky,fresh||Standard
-Jasmine Super|F|Green Floral|Green and floral jasmine with a musky base|Green|Floral|Musky|Clean green-floral with a musky base|jasmine,super,green,floral,musky||Standard`;
+Jasmine Super|F|Green Floral|Green and floral jasmine with a musky base|Green|Floral|Musky|Clean green-floral with a musky base|jasmine,super,green,floral,musky||Standard
+Exca Wave|S|Fresh Aromatic|Aldehydic, cyclamen and lavender freshness with a green geranium-jasmine heart and an amber base|Aldehydes, Cyclamen, Lavender/Aromatic|Galbanum, Geranium, Jasmine|Amber, Balsamic, Coumarin|Clean aldehydic-lavender freshness with a warm amber base|exca,wave,aldehydes,cyclamen,lavender,aromatic,galbanum,geranium,jasmine,amber,balsamic,coumarin||Standard`;
 window.SEED_WORDS = [
 ["Top note","First smell in the first minutes (citrus, lime, light floral)."],
 ["Middle (heart) note","Main character after the top fades (rose, jasmine, lavender)."],
