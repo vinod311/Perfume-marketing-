@@ -54,7 +54,7 @@ function loginView(msg){
   app.innerHTML='<div class="card"><h2>Login</h2><div class="mut">Use the email and password created in Supabase.</div><label>Email</label><input type="text" id="em" autocomplete="username" autocapitalize="off"><label>Password</label><input type="password" id="pw" autocomplete="current-password" style="width:100%;border:1px solid #888;border-radius:4px;padding:9px;font:inherit"><p style="color:var(--bad)" id="lm">'+esc(msg||'')+'</p><button class="btn y" id="li">Sign in</button></div>';
   var go=async function(){var r=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(r.error){$('#lm').textContent=r.error.message;return}start()};
   $('#li').onclick=go;$('#pw').onkeydown=function(e){if(e.key==='Enter')go()}}
-var SEEDV='notes-2026-11c';
+var SEEDV='notes-2026-11d';
 async function start(){
   $('.sb').style.display='';$('#nav').style.display='';
   var ok=false;
